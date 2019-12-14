@@ -33,6 +33,7 @@ void dio16_98265a_device::mb87030_scsi_adapter(device_t *device)
 void dio16_98265a_device::device_add_mconfig(machine_config &config)
 {
 	NSCSI_BUS(config, m_scsibus, 0);
+
 	nscsi_connector &scsicon0(NSCSI_CONNECTOR(config, "scsibus:0", 0));
 	default_scsi_devices(scsicon0);
 	scsicon0.set_default_option("harddisk");
@@ -47,6 +48,8 @@ void dio16_98265a_device::device_add_mconfig(machine_config &config)
 	scsicon5.set_default_option("cdrom");
 
 	default_scsi_devices(NSCSI_CONNECTOR(config, "scsibus:6", 0));
+
+	// fixme: the address should be determined from the SW2 setting.
 	nscsi_connector &scsicon7(NSCSI_CONNECTOR(config, "scsibus:7", 0));
 	scsicon7.option_add_internal("mb87030", MB87030);
 	scsicon7.set_default_option("mb87030");
