@@ -10,11 +10,13 @@ The SmartBoard can detect which piece is present on a specific square, more
 info on the technology used in the piece recognition system can be found in
 the US patent 5,129,654
 
-SB30 (81 LEDs) is "SmartBoard I"
-SB20 (64 LEDs) is "SmartBoard II"
+SmartBoard I is SB30 (81 LEDs, analog chesspieces)
+SmartBoard II is SB20 (64 LEDs, digital chesspieces)
+SmartBoard III is SB30 again, but digital
 
-SB20 is not emulated. It's on different hardware, with embedded CPU to reduce
-I/O overhead. Note, SB20 is not compatible with old versions of Tasc R30.
+SB20 and the newer SB30 are not emulated. They're on different hardware, with
+embedded CPU to reduce I/O overhead. Note, those are not compatible with old
+versions of Tasc R30.
 
 ******************************************************************************/
 
@@ -289,10 +291,9 @@ void tasc_sb30_device::data0_w(int state)
 				m_squares[i] = piece_id ? (1 << (piece_id - 1)) : 0;
 			}
 
+			m_scan_pending = false;
 			m_pos = 0;
 			update_output();
-
-			m_scan_pending = false;
 		}
 		else
 		{

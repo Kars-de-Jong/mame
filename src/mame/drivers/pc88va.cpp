@@ -21,7 +21,7 @@
       bp f0b31,pc=0xf0b36,g
       Update: it never reaches latter with V30->V50 CPU switch fix;
     - Fix floppy motor hook-up (floppy believes to be always in even if empty drive);
-	- Support for PC8801 compatible mode & PC80S31K (floppy interface);
+    - Support for PC8801 compatible mode & PC80S31K (floppy interface);
 
 ********************************************************************************************/
 
@@ -32,9 +32,9 @@
 
 void pc88va_state::video_start()
 {
-	m_kanjiram = auto_alloc_array(machine(), uint8_t, 0x4000);
-	m_gfxdecode->gfx(2)->set_source(m_kanjiram);
-	m_gfxdecode->gfx(3)->set_source(m_kanjiram);
+	m_kanjiram = std::make_unique<uint8_t[]>(0x4000);
+	m_gfxdecode->gfx(2)->set_source(m_kanjiram.get());
+	m_gfxdecode->gfx(3)->set_source(m_kanjiram.get());
 }
 
 void pc88va_state::draw_sprites(bitmap_rgb32 &bitmap, const rectangle &cliprect)

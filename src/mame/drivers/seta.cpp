@@ -1422,10 +1422,9 @@ Note: on screen copyright is (c)1998 Coinmaster.
 #include "machine/pit8253.h"
 #include "machine/watchdog.h"
 #include "sound/okim6295.h"
-#include "sound/ym2151.h"
-#include "sound/ym2203.h"
-#include "sound/ym2612.h"
-#include "sound/ym3812.h"
+#include "sound/ymopm.h"
+#include "sound/ymopn.h"
+#include "sound/ymopl.h"
 
 #include "diserial.h"
 #include "screen.h"
@@ -4573,7 +4572,8 @@ static INPUT_PORTS_START( downtown )
 	PORT_DIPSETTING(      0x0080, DEF_STR( 1C_3C ) )    PORT_CONDITION("DSW",0x8000,NOTEQUALS,0x8000)
 	PORT_DIPSETTING(      0x0040, DEF_STR( 1C_4C ) )    PORT_CONDITION("DSW",0x8000,NOTEQUALS,0x8000)
 	PORT_DIPSETTING(      0x0000, DEF_STR( 1C_6C ) )    PORT_CONDITION("DSW",0x8000,NOTEQUALS,0x8000)
-	PORT_DIPNAME( 0x0300, 0x0100, DEF_STR( Difficulty ) ) PORT_DIPLOCATION("SW2:1,2")
+	// default "Normal" on Romstar manual, and matches ALL OFF scheme
+	PORT_DIPNAME( 0x0300, 0x0300, DEF_STR( Difficulty ) ) PORT_DIPLOCATION("SW2:1,2")
 	PORT_DIPSETTING(      0x0200, DEF_STR( Easy ) )
 	PORT_DIPSETTING(      0x0300, DEF_STR( Normal ) )
 	PORT_DIPSETTING(      0x0100, DEF_STR( Hard ) )
@@ -4583,6 +4583,8 @@ static INPUT_PORTS_START( downtown )
 	PORT_DIPSETTING(      0x0800, "50K Only" )
 	PORT_DIPSETTING(      0x0400, "100K Only" )
 	PORT_DIPSETTING(      0x0000, "50K, Every 150K" )
+	// TODO: defaults to 2 lives in the Romstar manual, contradicts with DIPSW ALL OFF convention.
+	// Is it a regional difference? Verify with a Mokugeki Jp manual.
 	PORT_DIPNAME( 0x3000, 0x3000, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW2:5,6")
 	PORT_DIPSETTING(      0x1000, "2" )
 	PORT_DIPSETTING(      0x3000, "3" )
@@ -10951,12 +10953,12 @@ ROM_START( daiohp2 ) /* Found on the same P0-072-2 PCB as the previous Daioh pro
 	ROM_LOAD( "se_1.u70", 0x080000, 0x080000, CRC(593c3c58) SHA1(475fb530a6d23269cb0aea6e294291c7463b57a2) )
 
 	ROM_REGION( 0xc00, "pals", 0 )
-	ROM_LOAD( "fa-023.u35",  0x000000, 0x117, CRC(f187ea2d) SHA1(d2f05b42c0bbc6dc711c525b2a63d4de3ac9de03) ) 
-	ROM_LOAD( "fa-024.u36",  0x000200, 0x117, CRC(02c87697) SHA1(5ff985ba88f4de677cf13626c95eee0b59fbb96a) ) 
-	ROM_LOAD( "fa-022.u14",  0x000400, 0x117, CRC(f780fd0e) SHA1(58513fdef8bff5bb32f7de04d2d5f1446c66d108) ) 
-	ROM_LOAD( "fa-020.u206", 0x000600, 0x117, CRC(cd2cd02c) SHA1(150fdacfc44ea5a2f61c1cf626011d43b75ad618) ) 
-	ROM_LOAD( "fa-025.u76",  0x000800, 0x117, CRC(875c0c81) SHA1(8c259b75f40bf8ad2971648e4bd3284ef5da30d5) ) 
-	ROM_LOAD( "fa-021.u116", 0x000a00, 0x117, CRC(e335cf2e) SHA1(35f6fa2fb2da1dc5b1fad93f44947f76d6ef35aa) ) 
+	ROM_LOAD( "fa-023.u35",  0x000000, 0x117, CRC(f187ea2d) SHA1(d2f05b42c0bbc6dc711c525b2a63d4de3ac9de03) )
+	ROM_LOAD( "fa-024.u36",  0x000200, 0x117, CRC(02c87697) SHA1(5ff985ba88f4de677cf13626c95eee0b59fbb96a) )
+	ROM_LOAD( "fa-022.u14",  0x000400, 0x117, CRC(f780fd0e) SHA1(58513fdef8bff5bb32f7de04d2d5f1446c66d108) )
+	ROM_LOAD( "fa-020.u206", 0x000600, 0x117, CRC(cd2cd02c) SHA1(150fdacfc44ea5a2f61c1cf626011d43b75ad618) )
+	ROM_LOAD( "fa-025.u76",  0x000800, 0x117, CRC(875c0c81) SHA1(8c259b75f40bf8ad2971648e4bd3284ef5da30d5) )
+	ROM_LOAD( "fa-021.u116", 0x000a00, 0x117, CRC(e335cf2e) SHA1(35f6fa2fb2da1dc5b1fad93f44947f76d6ef35aa) )
 ROM_END
 
 ROM_START( daiohc ) /* Found on a 93111A PCB - same PCB as War of Areo & J. J. Squawkers */
@@ -12139,12 +12141,15 @@ u16 downtown_state::downtown_protection_r(offs_t offset)
 		case 0xa3:
 		{
 			static const u8 word[] = "WALTZ0";
-			if (offset >= 0x100/2 && offset <= 0x10a/2) return word[offset - 0x100/2];
-			else                                        return 0;
+			if (offset >= 0x100/2 && offset <= 0x10a/2)
+				return word[offset - 0x100/2];
+
+			// definitely wants to read-back hi-score table from 0x110-0x15f
+			break;
 		}
-		default:
-			return m_downtown_protection[offset] & 0xff;
 	}
+
+	return m_downtown_protection[offset] & 0xff;
 }
 
 void downtown_state::downtown_protection_w(offs_t offset, u16 data, u16 mem_mask)
@@ -12156,8 +12161,12 @@ void downtown_state::init_downtown()
 {
 	init_bank6502();
 
-	m_downtown_protection = make_unique_clear<u16[]>(0x200/2);
-	save_pointer(NAME(m_downtown_protection),0x200/2);
+	m_downtown_protection = make_unique_clear<u8[]>(0x100);
+	// TODO: protection RAM area is user clearable from service mode, most likely has some sort of battery backed RAM
+	// initializing with 0xff is enough for host CPU to catch up and default it with sensible defaults.
+	for (int i = 0; i < 0x100; i++)
+		m_downtown_protection[i] = 0xff;
+	save_pointer(NAME(m_downtown_protection), 0x200/2);
 
 	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200000, 0x2001ff, read16sm_delegate(*this, FUNC(downtown_state::downtown_protection_r)));
 	m_maincpu->space(AS_PROGRAM).install_write_handler(0x200000, 0x2001ff, write16s_delegate(*this, FUNC(downtown_state::downtown_protection_w)));
@@ -12312,15 +12321,15 @@ GAME( 1989, usclssic,  0,        usclssic,  usclssic,  usclssic_state, init_bank
 
 GAME( 1989, calibr50,  0,        calibr50,  calibr50,  downtown_state, init_bank6502,  ROT270, "Athena / Seta",             "Caliber 50 (Ver. 1.01)" , 0) // Country/License: DSW
 
-GAME( 1989, arbalest,  0,        arbalest,  arbalest,  downtown_state, init_arbalest,  ROT270, "Seta",                      "Arbalester" , 0) // Country/License: DSW
+GAME( 1989, arbalest,  0,        arbalest,  arbalest,  downtown_state, init_arbalest,  ROT270, "Jordan I.S. / Seta",        "Arbalester" , 0) // Developed by Jordan for Seta, Country/License: DSW
 
-GAME( 1989, metafox,   0,        metafox,   metafox,   downtown_state, init_metafox,   ROT270, "Seta",                      "Meta Fox" , 0) // Country/License: DSW
+GAME( 1989, metafox,   0,        metafox,   metafox,   downtown_state, init_metafox,   ROT270, "Jordan I.S. / Seta",        "Meta Fox" , 0) // Developed by Jordan for Seta, Country/License: DSW
 
 /* 68000 */
 
 GAME( 1989?,setaroul,  0,        setaroul,  setaroul,  setaroul_state, empty_init,     ROT270, "Visco",                     "The Roulette (Visco)", MACHINE_CLICKABLE_ARTWORK )
 
-GAME( 1989, drgnunit,  0,        drgnunit,  drgnunit,  seta_state,     empty_init,     ROT0,   "Seta",                      "Dragon Unit / Castle of Dragon", 0 )
+GAME( 1989, drgnunit,  0,        drgnunit,  drgnunit,  seta_state,     empty_init,     ROT0,   "Athena / Seta",             "Dragon Unit / Castle of Dragon", 0 ) // Country/License: DSW
 
 GAME( 1989, wits,      0,        wits,      wits,      seta_state,     empty_init,     ROT0,   "Athena (Visco license)",    "Wit's (Japan)" , 0) // Country/License: DSW
 
@@ -12357,7 +12366,7 @@ GAME( 1992, umanclub,  0,        umanclub,  umanclub,  seta_state,     empty_ini
 GAME( 1992, zingzip,   0,        zingzip,   zingzip,   seta_state,     empty_init,     ROT270, "Allumer / Tecmo",           "Zing Zing Zip", 0 ) // This set has Chinese Characters in Title screen, it distributed for Chinese market/or Title: DSW?
 GAME( 1992, zingzipbl, zingzip,  zingzipbl, zingzip,   seta_state,     empty_init,     ROT270, "bootleg",                   "Zing Zing Zip (bootleg)", MACHINE_NOT_WORKING )
 
-GAME( 1993, atehate,   0,        atehate,   atehate,   seta_state,     empty_init,     ROT0,   "Athena",                    "Athena no Hatena ?", 0 )
+GAME( 1993, atehate,   0,        atehate,   atehate,   seta_state,     empty_init,     ROT0,   "Athena",                    "Athena no Hatena?", 0 )
 
 GAME( 1993, daioh,     0,        daioh,     daioh,     seta_state,     empty_init,     ROT270, "Athena",                    "Daioh", 0 )
 GAME( 1993, daioha,    daioh,    daioh,     daioh,     seta_state,     empty_init,     ROT270, "Athena",                    "Daioh (earlier)", 0 )
